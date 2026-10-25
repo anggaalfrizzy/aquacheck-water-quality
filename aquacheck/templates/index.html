@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AquaCheck — Apakah air ini aman diminum?</title>
+<meta name="description" content="Masukkan 20 parameter kontaminan air, dapatkan prediksi keamanan minum dari model Logistic Regression.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#EEF4F6;--surface:#fff;--ink:#0C2233;--muted:#5B7080;--line:#D3E0E6;--sea:#0E7C86;--sea-d:#095A62;--foam:#CFEBEE;--bad:#C2410C;--bad-bg:#FBE9DD;
+--serif:"Instrument Serif",Georgia,serif;--sans:"Hanken Grotesk",system-ui,sans-serif;--mono:"JetBrains Mono",ui-monospace,monospace}
+@media(prefers-color-scheme:dark){:root{--bg:#07151F;--surface:#0D2030;--ink:#E6F1F4;--muted:#8FA6B3;--line:#1B3446;--sea:#3FC1CB;--sea-d:#7FDCE3;--foam:#12404A;--bad:#FB9A6B;--bad-bg:#3A1E12}}
+*{box-sizing:border-box}html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:inherit}:focus-visible{outline:3px solid var(--sea);outline-offset:3px;border-radius:6px}
+.wrap{max-width:1160px;margin:0 auto;padding:0 28px}
+nav{display:flex;justify-content:space-between;align-items:center;padding:22px 0}
+.logo{font:400 26px var(--serif);text-decoration:none;display:flex;align-items:center;gap:10px}
+.logo i{width:14px;height:14px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--sea);display:block}
+nav a.l{margin-left:26px;text-decoration:none;color:var(--muted);font-size:15px;font-weight:500}nav a.l:hover{color:var(--ink)}
+.hero{display:grid;grid-template-columns:1.15fr .85fr;gap:40px;align-items:center;padding:36px 0 70px}
+h1{font:400 clamp(44px,6.4vw,88px)/.98 var(--serif);letter-spacing:-.02em;margin:0 0 24px}
+h1 em{font-style:italic;color:var(--sea)}
+.lead{font-size:19px;color:var(--muted);max-width:50ch;margin:0 0 30px}
+.btn{display:inline-block;background:var(--ink);color:var(--bg);padding:15px 26px;border-radius:999px;font-weight:600;text-decoration:none;border:0;font-size:16px;cursor:pointer;font-family:inherit}
+.btn:hover{background:var(--sea-d);color:#fff}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line);margin-left:10px}.btn.ghost:hover{background:var(--surface);color:var(--ink)}
+.beaker{width:100%;max-width:380px;margin:0 auto;display:block}
+.beaker .wv{transition:transform 1.6s cubic-bezier(.2,.8,.2,1)}
+.beaker .wave{animation:drift 6s linear infinite}
+@keyframes drift{to{transform:translateX(-120px)}}
+section{padding:72px 0;border-top:1px solid var(--line)}
+h2{font:400 clamp(32px,4vw,52px)/1.05 var(--serif);margin:0 0 12px;letter-spacing:-.01em}
+.sub{color:var(--muted);max-width:62ch;margin:0 0 40px}
+.lab{display:grid;grid-template-columns:1.3fr .7fr;gap:32px;align-items:start}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:30px}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:26px 28px}
+.f label{display:flex;justify-content:space-between;font-weight:600;font-size:15px}
+.f label span{font:400 12.5px var(--mono);color:var(--muted)}
+.f .row{display:flex;gap:12px;align-items:center;margin-top:8px}
+.f input[type=range]{flex:1;accent-color:var(--sea);height:4px}
+.f input[type=number]{width:92px;font:500 14px var(--mono);padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+.f small{color:var(--muted);font-size:12.5px;display:block;margin-top:4px}
+.actions{margin-top:30px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.result{position:sticky;top:20px;text-align:center}
+.verdict{font:400 34px/1.1 var(--serif);margin:6px 0}
+.pill{display:inline-block;padding:5px 14px;border-radius:999px;font-weight:600;font-size:13px;background:var(--foam);color:var(--sea-d)}
+.pill.bad{background:var(--bad-bg);color:var(--bad)}
+.prob{font:500 44px var(--mono);margin:8px 0 0}
+.note{color:var(--muted);font-size:14px;margin-top:14px;text-align:left}
+.err{color:var(--bad);font-weight:600;margin-top:12px}
+.why{margin-top:22px;text-align:left}.why h3{font:600 14px var(--sans);margin:0 0 10px}
+.bar{display:grid;grid-template-columns:110px 1fr;gap:10px;align-items:center;font-size:12.5px;margin:5px 0;color:var(--muted)}
+.bar div{height:8px;background:var(--line);border-radius:4px;position:relative}.bar b{position:absolute;top:0;bottom:0;border-radius:4px}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:28px}
+.k{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px}
+.k b{display:block;font:400 40px var(--serif)}.k span{color:var(--muted);font-size:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.cm{display:grid;grid-template-columns:70px 1fr 1fr;grid-template-rows:auto 1fr 1fr;gap:8px;font-size:13px;color:var(--muted)}
+.cm .c{border-radius:14px;padding:22px 12px;text-align:center;color:var(--ink)}
+.cm .c b{display:block;font:400 40px var(--serif)}
+.cm .ok{background:var(--foam)}.cm .no{background:var(--bad-bg)}
+.cm .h{text-align:center;align-self:end}.cm .s{align-self:center}
+.panel h3{font:400 24px var(--serif);margin:0 0 16px}
+.honest{margin-top:28px;border-left:4px solid var(--bad);background:var(--surface);padding:20px 24px;border-radius:0 16px 16px 0}
+.honest b{display:block;margin-bottom:4px}
+.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin:0;padding:0;list-style:none;counter-reset:s}
+.steps li{counter-increment:s;padding-top:14px;border-top:2px solid var(--sea)}
+.steps li:before{content:"Tahap " counter(s);font:500 13px var(--mono);color:var(--sea)}
+.steps h4{font:400 24px var(--serif);margin:6px 0}.steps p{color:var(--muted);font-size:14.5px;margin:0}
+footer{padding:40px 0 60px;color:var(--muted);font-size:14px;border-top:1px solid var(--line)}
+@media(max-width:900px){.hero,.lab,.grid2{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}.steps{grid-template-columns:1fr 1fr}.fields{grid-template-columns:1fr}.result{position:static}nav .l{display:none}}
+@media(prefers-reduced-motion:reduce){.beaker .wave{animation:none}.beaker .wv{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav><a class="logo" href="#"><i></i>AquaCheck</a><div><a class="l" href="#uji">Uji sampel</a><a class="l" href="#model">Performa model</a><a class="l" href="#metode">Metode</a></div></nav>
+
+<header class="hero">
+  <div>
+    <h1>Seberapa aman air <em>ini</em> diminum?</h1>
+    <p class="lead">Masukkan hasil ukur 20 kontaminan dari sampel air. Model Logistic Regression yang dilatih pada {{ "{:,}".format(m.n_total).replace(",", ".") }} sampel air menghitung peluang air tersebut aman diminum.</p>
+    <a class="btn" href="#uji">Uji sampel air</a><a class="btn ghost" href="#model">Lihat akurasi model</a>
+  </div>
+  <svg class="beaker" viewBox="0 0 320 380" role="img" aria-label="Gelas ukur yang terisi sesuai peluang aman diminum">
+    <defs><clipPath id="glass"><path d="M60 40h200l-14 300a22 22 0 0 1-22 20H96a22 22 0 0 1-22-20z"/></clipPath>
+    <linearGradient id="wg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--sea)" stop-opacity=".75"/><stop offset="1" stop-color="var(--sea-d)" stop-opacity=".95"/></linearGradient></defs>
+    <g clip-path="url(#glass)"><g class="wv" id="level" style="transform:translateY(190px)">
+      <path class="wave" fill="url(#wg)" d="M-120 14c30 -14 60 14 90 0s60 -14 90 0 60 14 90 0 60 -14 90 0 60 14 90 0 60 -14 90 0 60 14 90 0V420H-120z"/></g></g>
+    <path d="M60 40h200l-14 300a22 22 0 0 1-22 20H96a22 22 0 0 1-22-20z" fill="none" stroke="var(--ink)" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M48 40h224" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/>
+    <g stroke="var(--ink)" stroke-width="2" opacity=".55" stroke-linecap="round"><path d="M224 90h22M232 130h14M226 170h22M234 210h12M228 250h22M236 290h10"/></g>
+    <text id="beakerPct" x="160" y="215" text-anchor="middle" font-family="Instrument Serif,serif" font-size="64" fill="var(--ink)">—</text>
+  </svg>
+</header>
+
+<section id="uji">
+  <h2>Uji sampel air</h2>
+  <p class="sub">Geser penggeser atau ketik angka langsung. Nilai awal adalah median dataset. Angka “batas” adalah ambang berbahaya menurut dataset: nilai di atasnya ditandai merah.</p>
+  <div class="lab">
+    <form class="panel" id="form" novalidate>
+      <div class="fields">
+      {% for f in features %}{% set r = m.ranges[f] %}{% set lim = m.meta[f][1] %}
+        <div class="f">
+          <label for="n_{{f}}">{{ m.meta[f][0] }}<span>batas {{ lim if lim > 0 else '0 (harus nol)' }}</span></label>
+          <div class="row">
+            <input type="range" id="r_{{f}}" min="{{ [r[0],0]|max }}" max="{{ r[2] }}" step="{{ ((r[2]-[r[0],0]|max)/200)|round(4) or 0.001 }}" value="{{ r[1] }}" aria-label="{{ m.meta[f][0] }}">
+            <input type="number" id="n_{{f}}" name="{{f}}" min="0" max="{{ r[2] }}" step="any" value="{{ '%.3f'|format(r[1]) }}">
+          </div>
+          <small id="h_{{f}}">&nbsp;</small>
+        </div>
+      {% endfor %}
+      </div>
+      <div class="actions"><button class="btn" type="submit">Hitung keamanan</button><button class="btn ghost" type="button" id="reset" style="margin-left:0">Kembalikan ke median</button></div>
+      <div class="err" id="err" role="alert"></div>
+    </form>
+
+    <aside class="panel result" aria-live="polite">
+      <span class="pill" id="pill">Belum ada hasil</span>
+      <div class="verdict" id="verdict">Isi parameter lalu hitung.</div>
+      <div class="prob" id="prob">—</div>
+      <div class="note" id="pnote">Angka ini adalah peluang sampel masuk kelas “aman diminum” menurut model.</div>
+      <div class="why" id="why" hidden><h3>Parameter yang paling menentukan</h3><div id="bars"></div></div>
+    </aside>
+  </div>
+</section>
+
+<section id="model">
+  <h2>Seberapa bisa model ini dipercaya?</h2>
+  <p class="sub">Dievaluasi pada {{ m.n_test }} sampel uji yang tidak pernah dilihat model saat belajar (20% data, pembagian terstratifikasi).</p>
+  <div class="kpis">
+    <div class="k"><b>{{ '%.1f'|format(m.accuracy*100) }}%</b><span>Akurasi</span></div>
+    <div class="k"><b>{{ '%.1f'|format(m.precision*100) }}%</b><span>Presisi</span></div>
+    <div class="k"><b>{{ '%.1f'|format(m.recall*100) }}%</b><span>Recall</span></div>
+    <div class="k"><b>{{ '%.2f'|format(m.f1) }}</b><span>F1-Score</span></div>
+    <div class="k"><b>{{ '%.2f'|format(m.auc) }}</b><span>AUC</span></div>
+  </div>
+  <div class="grid2">
+    <div class="panel"><h3>Confusion matrix</h3>
+      <div class="cm">
+        <div></div><div class="h">Prediksi: tidak aman</div><div class="h">Prediksi: aman</div>
+        <div class="s">Aktual: tidak aman</div><div class="c ok"><b>{{ m.cm[0][0] }}</b>True Negative</div><div class="c no"><b>{{ m.cm[0][1] }}</b>False Positive</div>
+        <div class="s">Aktual: aman</div><div class="c no"><b>{{ m.cm[1][0] }}</b>False Negative</div><div class="c ok"><b>{{ m.cm[1][1] }}</b>True Positive</div>
+      </div>
+    </div>
+    <div class="panel"><h3>Kurva ROC</h3>
+      <svg id="roc" viewBox="0 0 320 260" width="100%" role="img" aria-label="Kurva ROC dengan AUC {{ '%.2f'|format(m.auc) }}"></svg>
+    </div>
+  </div>
+  <div class="honest"><b>Cara membaca hasil ini</b>
+    AUC {{ '%.2f'|format(m.auc) }} berarti model cukup mampu membedakan air aman dari tidak aman. Recall {{ '%.0f'|format(m.recall*100) }}% menunjukkan sebagian besar air aman terdeteksi, tetapi presisinya hanya {{ '%.0f'|format(m.precision*100) }}%: dari setiap tiga sampel yang dinyatakan aman, dua sebenarnya tidak. Penyebabnya, kelas aman hanya {{ '%.0f'|format(m.class_counts['1']/m.n_total*100) }}% dari data. Untuk air minum, False Positive (air berbahaya dinyatakan aman) adalah kesalahan paling berbahaya, jadi presisi kelas aman lebih penting daripada akurasi. Dataset ini berisi data imajiner kualitas air perkotaan, sehingga hasilnya bukan pengganti uji laboratorium.</div>
+</section>
+
+<section id="metode">
+  <h2>Cara kerjanya</h2>
+  <p class="sub">Dataset: Water Quality, {{ m.n_total }} sampel, {{ m.class_counts['1'] }} aman dan {{ m.class_counts['0'] }} tidak aman. 3 baris dengan label rusak (#NUM!) dibuang.</p>
+  <ol class="steps">
+    <li><h4>Imputasi</h4><p>Nilai rusak diubah jadi kosong lalu diisi median data latih. Baris tanpa label dibuang.</p></li>
+    <li><h4>Scaling</h4><p>Setiap fitur distandarkan dengan StandardScaler agar skalanya sebanding.</p></li>
+    <li><h4>SMOTE</h4><p>Kelas “aman” yang jauh lebih sedikit diseimbangkan dengan SMOTE, hanya pada data latih.</p></li>
+    <li><h4>Logistic Regression</h4><p>Fungsi sigmoid mengubah skor linear menjadi peluang. Ambang batas 0,5 menentukan kelas.</p></li>
+  </ol>
+</section>
+<footer>AquaCheck · Tugas Akhir 3 Pembelajaran Mesin · Klasifikasi Keamanan Air Minum Berdasarkan Kontaminan dengan Logistic Regression. Bukan alat uji resmi.</footer>
+</div>
+
+<script>
+const M={{ m|tojson }},F={{ features|tojson }},$=id=>document.getElementById(id);
+const NAMES=Object.fromEntries(Object.entries(M.meta).map(([k,v])=>[k,v[0]]));
+function hint(f){const v=+$('n_'+f).value,l=M.meta[f][1],h=$('h_'+f),bad=v>l;h.textContent=bad?'Di atas batas aman':'Dalam batas aman';h.style.color=bad?'var(--bad)':'var(--muted)'}
+F.forEach(f=>{const r=$('r_'+f),n=$('n_'+f);
+ r.addEventListener('input',()=>{n.value=(+r.value).toFixed(3);hint(f)});
+ n.addEventListener('input',()=>{if(n.value!=='')r.value=n.value;hint(f)});hint(f)});
+$('reset').onclick=()=>F.forEach(f=>{$('r_'+f).value=M.ranges[f][1];$('n_'+f).value=M.ranges[f][1].toFixed(3);hint(f)});
+function level(p){$('level').style.transform=`translateY(${340-p*300}px)`;$('beakerPct').textContent=Math.round(p*100)+'%'}
+$('form').addEventListener('submit',async e=>{e.preventDefault();$('err').textContent='';
+ const body={};F.forEach(f=>body[f]=$('n_'+f).value);
+ try{const res=await fetch('/api/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await res.json();if(!res.ok){$('err').textContent=d.error;return}
+  level(d.probability);$('verdict').textContent=d.label;$('prob').textContent=(d.probability*100).toFixed(1)+'%';
+  const pill=$('pill');pill.textContent=d.potable?'Diprediksi aman':'Diprediksi tidak aman';pill.className='pill'+(d.potable?'':' bad');
+  $('pnote').textContent=d.potable?'Peluang di atas 50%, sehingga model memasukkannya ke kelas aman diminum. Lihat catatan akurasi model di bawah sebelum mengandalkannya.':'Peluang di bawah 50%, sehingga model memasukkannya ke kelas tidak aman diminum. Lihat catatan akurasi model di bawah sebelum mengandalkannya.';
+  const items=Object.entries(d.contributions).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).slice(0,5),mx=Math.max(...items.map(i=>Math.abs(i[1])),.01);
+  $('bars').innerHTML=items.map(([k,v])=>{const w=Math.abs(v)/mx*50;return `<div class="bar"><span>${NAMES[k]}</span><div><b style="${v>=0?'left:50%':'right:50%'};width:${w}%;background:${v>=0?'var(--sea)':'var(--bad)'}"></b></div></div>`}).join('')+'<small style="color:var(--muted)">Kanan menaikkan peluang aman, kiri menurunkannya.</small>';
+  $('why').hidden=false;
+ }catch(x){$('err').textContent='Server tidak merespons. Coba lagi sebentar.'}});
+// ROC
+(()=>{const s=$('roc'),{fpr,tpr}=M.roc,X=v=>40+v*260,Y=v=>220-v*200;
+ let p=fpr.map((x,i)=>`${i?'L':'M'}${X(x)} ${Y(tpr[i])}`).join(' ');
+ s.innerHTML=`<path d="M${X(0)} ${Y(0)}L${X(1)} ${Y(1)}" stroke="var(--muted)" stroke-dasharray="5 5" fill="none"/>
+ <path d="${p}L${X(1)} ${Y(0)}L${X(0)} ${Y(0)}Z" fill="var(--sea)" opacity=".15"/><path d="${p}" stroke="var(--sea)" stroke-width="2.5" fill="none"/>
+ <path d="M40 20V220H300" stroke="var(--ink)" fill="none"/>
+ <text x="170" y="250" text-anchor="middle" font-size="11" fill="var(--muted)">False Positive Rate</text>
+ <text transform="translate(12 120) rotate(-90)" text-anchor="middle" font-size="11" fill="var(--muted)">True Positive Rate</text>
+ <text x="290" y="205" text-anchor="end" font-size="14" fill="var(--ink)">AUC ${M.auc.toFixed(2)}</text>`})();
+level(.5);$('beakerPct').textContent='?';
+</script>
+</body>
+</html>
